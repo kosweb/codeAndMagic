@@ -91,5 +91,48 @@ var renderStatistics = (ctx, players, times) => {
 	}
 };
 
-
 // SETUP
+
+var setupWindow = document.querySelector('.setup').classList.remove('hidden');
+
+var setupSimilarWindow = document.querySelector('.setup-similar').classList.remove('hidden');
+
+var similarList = document.querySelector('.setup-similar-list');
+var similarWizardTemplate = document.querySelector('#similar-wizard-template').content.querySelector('.setup-similar-item');
+
+var WIZARD_NAMES = ['Иван', 'Хуан', 'Себастьян', 'Мария', 'Кристоф', 'Виктор', 'Юлия', 'Люпита', 'Вашингтон'];
+var WIZARD_SECOND_NAMES = ['да Марья', 'Верон', 'Мирабелла', 'Вальц', 'Онопко', 'Нионго', 'Ирвинг'];
+var WIZARD_COAT_COLORS = ['rgb(101, 137, 164)', 'rgb(241, 43, 107)', 'rgb(146, 100, 161)', 'rgb(56, 159, 117)', 'rgb(215, 210, 55)', 'rgb(0, 0, 0)'];
+var WIZARD_EYE_COLORS = ['black', 'red', 'blue', 'yellow', 'green'];
+var WIZARD_FIREBALL_COLORS = ['#ee4830', '#30a8ee', '#5ce6c0', '#e848d5', '#e6e848'];
+
+var getRandomIndex = (arr) => {
+	return arr[Math.floor(Math.random() * (arr.length - 1))];
+};
+
+var createWizzard = () => {
+	return {
+		name: getRandomIndex(WIZARD_NAMES) + ' ' + getRandomIndex(WIZARD_SECOND_NAMES),
+		coatColor: getRandomIndex(WIZARD_COAT_COLORS),
+		eyeColor: getRandomIndex(WIZARD_EYE_COLORS)
+	}
+};
+
+var similarWizards = new Array(4).fill(null).map(() => createWizzard());
+
+var renderWizard = function(wizard) {
+  var wizardClone = similarWizardTemplate.cloneNode('true');
+  wizardClone.querySelector('.setup-similar-label').textContent = wizard.name;
+  wizardClone.querySelector('.wizard-coat').style.fill = wizard.coatColor;
+  wizardClone.querySelector('.wizard-eyes').style.fill = wizard.eyeColor;
+
+  return wizardClone;
+};
+
+var fragment = document.createDocumentFragment();
+for (let i = 0; i < similarWizards.length; i++) {
+  fragment.appendChild(renderWizard(similarWizards[i]));
+};
+
+similarList.appendChild(fragment);
+setupSimilarWindow.classList.remove('hidden');
