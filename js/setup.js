@@ -237,10 +237,21 @@ wizardEyes.addEventListener('click', (evt) => {
 	wizardEyes.style.fill = getEyeNewColor();
 });
 
-userNameInput.addEventListener('invalid', (evt) => {
-	if (userNameInput.validity.tooShort) {
+const MIN_NAME_LENGTH = 2;
+const MAX_NAME_LENGTH = 20;
+
+userNameInput.addEventListener('input', (evt) => {
+	const valueLength = evt.target.value.length;
+
+	if (valueLength < MIN_NAME_LENGTH) {
 		userNameInput.setCustomValidity('Имя должно состоять минимум из 2-х символов');
+	} else if (valueLength > MAX_NAME_LENGTH) {
+		userNameInput.setCustomValidity(`Удалите лишние ${valueLength - MAX_NAME_LENGTH} симв.`);
+	} else {
+		userNameInput.setCustomValidity('');
 	}
+
+	userNameInput.reportValidity();
 });
 
 
