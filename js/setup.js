@@ -99,7 +99,7 @@ const WIZARD_NAMES = ['Иван', 'Хуан', 'Себастьян', 'Мария'
 const WIZARD_SECOND_NAMES = ['да Марья', 'Верон', 'Мирабелла', 'Вальц', 'Онопко', 'Нионго', 'Ирвинг'];
 const WIZARD_COAT_COLORS = ['rgb(101, 137, 164)', 'rgb(241, 43, 107)', 'rgb(146, 100, 161)', 'rgb(56, 159, 117)', 'rgb(215, 210, 55)', 'rgb(0, 0, 0)'];
 const WIZARD_EYE_COLORS = ['black', 'red', 'blue', 'yellow', 'green'];
-const WIZARD_FIREBALL_COLORS = ['#ee4830', '#30a8ee', '#5ce6c0', '#e848d5', '#e6e848'];
+const wizardFireballColors = ['#ee4830', '#30a8ee', '#5ce6c0', '#e848d5', '#e6e848'];
 
 const getRandomIndex = (arr) => {
 	return arr[Math.floor(Math.random() * (arr.length - 1))];
@@ -142,12 +142,20 @@ const clearSimilarList = () => {
 const userModalElement = document.querySelector('.setup');
 const userModalOpenElement = document.querySelector('.setup-open');
 const userModalCloseElement = document.querySelector('.setup-close');
-const userNameSetupInput = document.querySelector('.setup-user-name');
+const userNameInput = document.querySelector('.setup-user-name');
+
+const isEnterPress = (evt) => {
+	return evt.key === 'Enter';
+};
+
+const isEscPress = (evt) => {
+	return evt.key === ('Escape' || 'Esc');
+};
 
 const onPopupEscPress = (evt) => {
-	if (userNameSetupInput === document.activeElement) {
+	if (userNameInput === document.activeElement) {
 		return evt;
-	} else if (evt.key === ('Escape' || 'Esc')) {
+	} else if (isEscPress(evt)) {
 		evt.preventDefault();
 		closeUserModal();
 	}
@@ -163,6 +171,8 @@ const openUserModal = () => {
 const closeUserModal = () => {
 	userModalElement.classList.add('hidden');
 	clearSimilarList();
+	userModalElement.style.top = '';
+	userModalElement.style.left = '';
 
 	document.removeEventListener('keydown', onPopupEscPress);
 };
@@ -182,7 +192,7 @@ userModalCloseElement.addEventListener('click', () => {
 });
 
 userModalCloseElement.addEventListener('keydown', (evt) => {
-	if (evt.key === 'Enter') {
+	if (isEnterPress(evt)) {
 		closeUserModal();
 	}
 });
@@ -196,7 +206,7 @@ const getFireballNewColor = (function(arr) {
   return () => {
     return arr[++count % arr.length];
   }
-}(WIZARD_FIREBALL_COLORS));
+}(wizardFireballColors));
 
 const getCoatNewColor = (function(arr) {
   let count = 0;
@@ -225,4 +235,62 @@ wizardCoat.addEventListener('click', (evt) => {
 wizardEyes.addEventListener('click', (evt) => {
 	evt.preventDefault();
 	wizardEyes.style.fill = getEyeNewColor();
+});
+
+userNameInput.addEventListener('invalid', (evt) => {
+	if (userNameInput.validity.tooShort) {
+		userNameInput.setCustomValidity('Имя должно состоять минимум из 2-х символов');
+	}
+});
+
+
+// ОБРАБОТЧИКИ ПЕРЕТАСКИВАНИЯ
+
+const userPicSetup = document.querySelector('.upload');
+
+userPicSetup.addEventListener('mousedown', (evt) => {
+	evt.preventDefault();
+
+	let startCoords = {
+		x: evt.clientX,
+		y: evt.clientY
+	};
+
+	let dragged = false;
+
+	let onMouseMove = (moveEvt) => {
+		moveEvt.preventDefault();
+		dragged = true;
+
+		let shift = {
+			x: startCoords.x - moveEvt.clientX,
+			y: startCoords.y - moveEvt.clientY
+		};
+
+		startCoords = {
+			x: moveEvt.clientX,
+			y: moveEvt.clientY
+		}
+
+		userModalElement.style.top = (userModalElement.offsetTop - shift.y) + 'px';
+		userModalElement.style.left = (userModalElement.offsetLeft - shift.x) + 'px';
+	};
+
+	let onMouseUp = (upEvt) => {
+		upEvt.preventDefault();
+		document.removeEventListener('mousemove', onMouseMove);
+		document.removeEventListener('mouseup', onMouseUp);
+
+		if (dragged) {
+			let inputTypefile = userPicSetup.querySelector('input');
+			let onClickPreventDefault = (evt) => {
+				evt.preventDefault();
+				inputTypefile.removeEventListener('click', onClickPreventDefault);
+			};
+			inputTypefile.addEventListener('click', onClickPreventDefault);
+		}
+	};
+
+	document.addEventListener('mousemove', onMouseMove);
+	document.addEventListener('mouseup', onMouseUp);
 });
