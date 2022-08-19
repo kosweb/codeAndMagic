@@ -1,5 +1,8 @@
 'use strict';
 
+
+// OPTIONS
+
 var fireballSize = 24;
 var wizardSpeed = 3;
 var wizardWidth = 70;
@@ -95,8 +98,6 @@ var renderStatistics = (ctx, players, times) => {
 const setupSimilarWindow = document.querySelector('.setup-similar').classList.remove('hidden');
 const similarList = document.querySelector('.setup-similar-list');
 const similarWizardTemplate = document.querySelector('#similar-wizard-template').content.querySelector('.setup-similar-item');
-const WIZARD_NAMES = ['Иван', 'Хуан', 'Себастьян', 'Мария', 'Кристоф', 'Виктор', 'Юлия', 'Люпита', 'Вашингтон'];
-const WIZARD_SECOND_NAMES = ['да Марья', 'Верон', 'Мирабелла', 'Вальц', 'Онопко', 'Нионго', 'Ирвинг'];
 const WIZARD_COAT_COLORS = ['rgb(101, 137, 164)', 'rgb(241, 43, 107)', 'rgb(146, 100, 161)', 'rgb(56, 159, 117)', 'rgb(215, 210, 55)', 'rgb(0, 0, 0)'];
 const WIZARD_EYE_COLORS = ['black', 'red', 'blue', 'yellow', 'green'];
 const wizardFireballColors = ['#ee4830', '#30a8ee', '#5ce6c0', '#e848d5', '#e6e848'];
@@ -105,28 +106,28 @@ const getRandomIndex = (arr) => {
 	return arr[Math.floor(Math.random() * (arr.length - 1))];
 };
 
-const createWizzard = () => {
-	return {
-		name: getRandomIndex(WIZARD_NAMES) + ' ' + getRandomIndex(WIZARD_SECOND_NAMES),
-		coatColor: getRandomIndex(WIZARD_COAT_COLORS),
-		eyeColor: getRandomIndex(WIZARD_EYE_COLORS)
-	}
-};
+// const createWizzard = () => {
+// 	return {
+// 		name: getRandomIndex(WIZARD_NAMES) + ' ' + getRandomIndex(WIZARD_SECOND_NAMES),
+// 		coatColor: getRandomIndex(WIZARD_COAT_COLORS),
+// 		eyeColor: getRandomIndex(WIZARD_EYE_COLORS)
+// 	}
+// };
 
-const createWizzards = () => new Array(4).fill(null).map(() => createWizzard());
+// const createWizzards = () => new Array(4).fill(null).map(() => createWizzard());
 
-const similarWizards = createWizzards();
+// const similarWizards = createWizzards();
 
-const renderSimilarList = () => {
+const renderSimilarList = (data) => {
 	const similarListFragment = document.createDocumentFragment();
 
-	similarWizards.forEach((wizard) => {
+	for (let i = 0; i < 4; i++) {
 		const wizardClone = similarWizardTemplate.cloneNode('true');
-		wizardClone.querySelector('.setup-similar-label').textContent = wizard.name;
-		wizardClone.querySelector('.wizard-coat').style.fill = wizard.coatColor;
-		wizardClone.querySelector('.wizard-eyes').style.fill = wizard.eyeColor;
+		wizardClone.querySelector('.setup-similar-label').textContent = data[i].name;
+		wizardClone.querySelector('.wizard-coat').style.fill = data[i].colorCoat;
+		wizardClone.querySelector('.wizard-eyes').style.fill = data[i].colorEyes;
 		similarListFragment.appendChild(wizardClone);
-	});
+	}
 
 	similarList.appendChild(similarListFragment);
 };
@@ -163,7 +164,12 @@ const onPopupEscPress = (evt) => {
 
 const openUserModal = () => {
 	userModalElement.classList.remove('hidden');
-	renderSimilarList();
+
+	sendRequest('GET', getRequestURL)
+	.then(data => {
+		renderSimilarList(data);
+	} )
+	.catch(err => console.error(err))
 
 	document.addEventListener('keydown', onPopupEscPress);
 };
@@ -238,7 +244,7 @@ wizardEyes.addEventListener('click', (evt) => {
 });
 
 const MIN_NAME_LENGTH = 2;
-const MAX_NAME_LENGTH = 20;
+const MAX_NAME_LENGTH = 21;
 
 userNameInput.addEventListener('input', (evt) => {
 	const valueLength = evt.target.value.length;
@@ -304,4 +310,52 @@ userPicSetup.addEventListener('mousedown', (evt) => {
 
 	document.addEventListener('mousemove', onMouseMove);
 	document.addEventListener('mouseup', onMouseUp);
+});
+
+
+// ОБРАБОТЧИКИ ФОРМЫ
+
+// SERVER
+
+function sendRequest(method, url, body = null) {
+	return new Promise((resolve, reject) => {
+
+		const xhr = new XMLHttpRequest();
+
+		xhr.responseType = 'json';
+		xhr.timeout = 10000;
+
+		xhr.addEventListener('load', () => {
+			if (xhr.status >= 400) {
+				reject(`Статус ответа: ${xhr.status} ${xhr.statusText}`);
+			} else {
+				resolve(xhr.response);
+			}
+		});
+
+		xhr.addEventListener('error', () => {
+			reject('Произошла ошибка соединения с сервером');
+		});
+
+		xhr.addEventListener('timeout', () => {
+			reject(`Запрос не успел выполниться за ${xhr.timeout} мс`);
+		});
+
+		xhr.open(method, url);
+		xhr.setRequestHeader('Content-Type', 'application/json');
+		xhr.send(JSON.stringify(body));
+	});
+};
+
+const getRequestURL = 'https://24.javascript.pages.academy/code-and-magick/data';
+const postRequestURL = 'https://24.javascript.pages.academy/code-and-magick';
+const form = document.querySelector('.setup-wizard-form');
+
+
+form.addEventListener('submit', (evt) => {
+	sendRequest('POST', postRequestURL, new FormData(form))
+	.then(data => console.log(data))
+	.catch(err => console.log(err));
+	evt.preventDefault();
+	closeUserModal();
 });
