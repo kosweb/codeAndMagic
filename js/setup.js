@@ -98,8 +98,8 @@ var renderStatistics = (ctx, players, times) => {
 const setupSimilarWindow = document.querySelector('.setup-similar').classList.remove('hidden');
 const similarList = document.querySelector('.setup-similar-list');
 const similarWizardTemplate = document.querySelector('#similar-wizard-template').content.querySelector('.setup-similar-item');
-const WIZARD_COAT_COLORS = ['rgb(101, 137, 164)', 'rgb(241, 43, 107)', 'rgb(146, 100, 161)', 'rgb(56, 159, 117)', 'rgb(215, 210, 55)', 'rgb(0, 0, 0)'];
-const WIZARD_EYE_COLORS = ['black', 'red', 'blue', 'yellow', 'green'];
+const WIZARD_COAT_COLORS = ['rgb(146, 100, 161)', 'rgb(215, 210, 55)', 'rgb(241, 43, 107)', 'rgb(101, 137, 164)', 'rgb(0, 0, 0)', 'rgb(56, 159, 117)'];
+const WIZARD_EYE_COLORS = ['red', 'orange', 'yellow', 'green', 'lightblue', 'blue', 'purple'];
 const wizardFireballColors = ['#ee4830', '#30a8ee', '#5ce6c0', '#e848d5', '#e6e848'];
 
 const getRandomIndex = (arr) => {
@@ -132,10 +132,6 @@ const renderSimilarList = (data) => {
 	similarList.appendChild(similarListFragment);
 };
 
-const clearSimilarList = () => {
-	similarList.innerHTML = '';
-}
-
 
 // ОБРАБОТЧИКИ
 
@@ -164,19 +160,11 @@ const onPopupEscPress = (evt) => {
 
 const openUserModal = () => {
 	userModalElement.classList.remove('hidden');
-
-	sendRequest('GET', getRequestURL)
-	.then(data => {
-		renderSimilarList(data);
-	} )
-	.catch(err => console.error(err))
-
 	document.addEventListener('keydown', onPopupEscPress);
 };
 
 const closeUserModal = () => {
 	userModalElement.classList.add('hidden');
-	clearSimilarList();
 	userModalElement.style.top = '';
 	userModalElement.style.left = '';
 
@@ -203,6 +191,12 @@ userModalCloseElement.addEventListener('keydown', (evt) => {
 	}
 });
 
+
+// -----------------------------------------------------------------------------
+const getRequestURL = 'https://24.javascript.pages.academy/code-and-magick/data';
+const postRequestURL = 'https://24.javascript.pages.academy/code-and-magick';
+const form = document.querySelector('.setup-wizard-form');
+
 const fireballWrapper = document.querySelector('.setup-fireball-wrap');
 const wizardCoat = document.querySelector('.wizard-coat');
 const wizardEyes = document.querySelector('.wizard-eyes');
@@ -228,20 +222,119 @@ const getEyeNewColor = (function(arr) {
   }
 }(WIZARD_EYE_COLORS));
 
+let fireballColor;
+let coatColor;
+let eyesColor;
+let wizards = [];
+
+sendRequest('GET', getRequestURL)
+.then(data => {
+	wizards = data;
+})
+.catch(err => console.error(err))
+
+
+// const updateWizards = (wizards) => {
+// 	const sameCoatAndEyesWizards = wizards.filter(element => {
+// 		return element.colorCoat === coatColor && element.colorEyes === eyesColor;
+// 	});
+
+// 	const sameCoatWizards = wizards.filter(element => {
+// 		return element.colorCoat === coatColor;
+// 	});
+
+// 	const sameEyesWizards = wizards.filter(element => {
+// 		return element.colorEyes === eyesColor;
+// 	});
+
+// 	const filteredWizards = sameCoatAndEyesWizards;
+// 	filteredWizards.concat(sameCoatWizards).concat(sameEyesWizards).concat(wizards)
+
+// 	const uniqueWizards = filteredWizards.filter((element, i) => {
+// 		return filteredWizards.indexOf(element) === i;
+// 	});
+
+
+// 	renderSimilarList();
+// };
+
+
+const getRank = (wizard) => {
+	let rank = 0;
+
+	if (wizard.colorCoat === coatColor) {
+		rank += 2;
+	}
+	if (wizard.colorEyes === eyesColor) {
+		rank += 1;
+	}
+	if (wizard.colorFireball === fireballColor) {
+		rank += 0.5;
+	}
+	return rank;
+};
+
+const namesComparator = (left, right) => {
+	if (left > right) {
+		return 1;
+	} else if (left < right) {
+		return -1;
+	} else {
+		return 0;
+	}
+};
+
+const wizardsComparator = function (left, right) {
+	const rankDiff = getRank(right) - getRank(left);
+	return rankDiff === 0 ? namesComparator(left.name, right.name) : rankDiff;
+};
+
+function updateWizards() {
+	renderSimilarList(wizards.slice().sort(wizardsComparator));
+};
+
+function debounce(fn, ms) {
+  let timeout;
+  return function() {
+    const fnCall = () => { fn.apply(this, arguments) }
+		clearTimeout(timeout);
+    timeout = setTimeout(fnCall, ms);
+  };
+}
+
+const updateWizardsDebaunce = debounce(updateWizards, 500);
+
+
 fireballWrapper.addEventListener('click', (evt) => {
 	evt.preventDefault();
-	fireballWrapper.style.backgroundColor = getFireballNewColor();
+	const newColor = getFireballNewColor();
+	fireballWrapper.style.backgroundColor = newColor;
+	fireballColor = newColor;
+	similarList.innerHTML = '';
+	updateWizardsDebaunce();
 });
 
 wizardCoat.addEventListener('click', (evt) => {
 	evt.preventDefault();
-	wizardCoat.style.fill = getCoatNewColor();
+	const newColor = getCoatNewColor();
+	wizardCoat.style.fill = newColor;
+	coatColor = newColor;
+	similarList.innerHTML = '';
+	updateWizardsDebaunce();
 });
 
 wizardEyes.addEventListener('click', (evt) => {
 	evt.preventDefault();
-	wizardEyes.style.fill = getEyeNewColor();
+	const newColor = getEyeNewColor();
+	wizardEyes.style.fill = newColor;
+	eyesColor = newColor;
+	similarList.innerHTML = '';
+	updateWizardsDebaunce();
 });
+
+
+// -----------------------------------------------------------------------------
+
 
 const MIN_NAME_LENGTH = 2;
 const MAX_NAME_LENGTH = 21;
@@ -262,6 +355,7 @@ userNameInput.addEventListener('input', (evt) => {
 
 
 // ОБРАБОТЧИКИ ПЕРЕТАСКИВАНИЯ
+
 
 const userPicSetup = document.querySelector('.upload');
 
@@ -317,6 +411,7 @@ userPicSetup.addEventListener('mousedown', (evt) => {
 
 // SERVER
 
+
 function sendRequest(method, url, body = null) {
 	return new Promise((resolve, reject) => {
 
@@ -346,11 +441,6 @@ function sendRequest(method, url, body = null) {
 		xhr.send(JSON.stringify(body));
 	});
 };
-
-const getRequestURL = 'https://24.javascript.pages.academy/code-and-magick/data';
-const postRequestURL = 'https://24.javascript.pages.academy/code-and-magick';
-const form = document.querySelector('.setup-wizard-form');
-
 
 form.addEventListener('submit', (evt) => {
 	sendRequest('POST', postRequestURL, new FormData(form))

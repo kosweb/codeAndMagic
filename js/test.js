@@ -1,5 +1,43 @@
 'use strict';
 
+// const hello = function () {
+// 	console.log('hello', this);
+// }
+
+
+// const person = {
+// 	name: 'Kos',
+// 	age: 31,
+// 	logInfo: function () {
+// 		console.group(`${this.name} info:`)
+// 		console.log(`My name is ${this.name}`)
+// 		console.log(`My age is ${this.age}`)
+// 		console.groupEnd()
+// 	}
+// }
+
+// const person2 = {
+// 	name: 'Lena',
+// 	age: 26
+// 	}
+
+// person.logInfo.bind(person2)()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // FETCH <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 // const requestURL = 'https://jsonplaceholder.typicode.com/users';
