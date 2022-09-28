@@ -99,39 +99,48 @@ const setupSimilarWindow = document.querySelector('.setup-similar').classList.re
 const similarList = document.querySelector('.setup-similar-list');
 const similarWizardTemplate = document.querySelector('#similar-wizard-template').content.querySelector('.setup-similar-item');
 const WIZARD_COAT_COLORS = ['rgb(146, 100, 161)', 'rgb(215, 210, 55)', 'rgb(241, 43, 107)', 'rgb(101, 137, 164)', 'rgb(0, 0, 0)', 'rgb(56, 159, 117)'];
-const WIZARD_EYE_COLORS = ['red', 'orange', 'yellow', 'green', 'lightblue', 'blue', 'purple'];
+const WIZARD_EYE_COLORS = ['red', 'orange', 'yellow', 'green', 'lightblue', 'blue', 'purple', 'black'];
 const wizardFireballColors = ['#ee4830', '#30a8ee', '#5ce6c0', '#e848d5', '#e6e848'];
 
-const getRandomIndex = (arr) => {
-	return arr[Math.floor(Math.random() * (arr.length - 1))];
+
+const getRank = (wizard) => {
+	let rank = 0;
+
+	if (wizard.colorCoat === (coatColor || 'rgb(101, 137, 164)')) {
+		rank += 4;
+	}
+	if (wizard.colorEyes === (eyesColor || 'black')) {
+		rank += 2;
+	}
+	if (wizard.colorFireball === (fireballColor || '#ee4830')) {
+		rank += 1;
+	}
+	return rank;
 };
 
-// const createWizzard = () => {
-// 	return {
-// 		name: getRandomIndex(WIZARD_NAMES) + ' ' + getRandomIndex(WIZARD_SECOND_NAMES),
-// 		coatColor: getRandomIndex(WIZARD_COAT_COLORS),
-// 		eyeColor: getRandomIndex(WIZARD_EYE_COLORS)
-// 	}
-// };
+const wizardsComparator = function (left, right) {
+	const rankDiff = getRank(right) - getRank(left);
+	return rankDiff;
+};
 
-// const createWizzards = () => new Array(4).fill(null).map(() => createWizzard());
-
-// const similarWizards = createWizzards();
-
-const renderSimilarList = (data) => {
+const renderSimilarList = (wizards) => {
 	const similarListFragment = document.createDocumentFragment();
 
-	for (let i = 0; i < 4; i++) {
-		const wizardClone = similarWizardTemplate.cloneNode('true');
-		wizardClone.querySelector('.setup-similar-label').textContent = data[i].name;
-		wizardClone.querySelector('.wizard-coat').style.fill = data[i].colorCoat;
-		wizardClone.querySelector('.wizard-eyes').style.fill = data[i].colorEyes;
-		similarListFragment.appendChild(wizardClone);
-	}
+		wizards
+			.slice()
+			.sort(wizardsComparator)
+			.slice(0, 4)
+			.forEach(element => {
+				const wizardClone = similarWizardTemplate.cloneNode('true');
+				wizardClone.querySelector('.setup-similar-label').textContent = element.name;
+				wizardClone.querySelector('.wizard-coat').style.fill = element.colorCoat;
+				wizardClone.querySelector('.wizard-eyes').style.fill = element.colorEyes;
+				similarListFragment.appendChild(wizardClone);
+			});
 
+	similarList.innerHTML = '';
 	similarList.appendChild(similarListFragment);
 };
-
 
 // ОБРАБОТЧИКИ
 
@@ -225,14 +234,6 @@ const getEyeNewColor = (function(arr) {
 let fireballColor;
 let coatColor;
 let eyesColor;
-let wizards = [];
-
-sendRequest('GET', getRequestURL)
-.then(data => {
-	wizards = data;
-})
-.catch(err => console.error(err))
-
 
 // const updateWizards = (wizards) => {
 // 	const sameCoatAndEyesWizards = wizards.filter(element => {
@@ -259,39 +260,16 @@ sendRequest('GET', getRequestURL)
 // };
 
 
-const getRank = (wizard) => {
-	let rank = 0;
+// const namesComparator = (left, right) => {
+// 	if (left > right) {
+// 		return 1;
+// 	} else if (left < right) {
+// 		return -1;
+// 	} else {
+// 		return 0;
+// 	}
+// };
 
-	if (wizard.colorCoat === coatColor) {
-		rank += 2;
-	}
-	if (wizard.colorEyes === eyesColor) {
-		rank += 1;
-	}
-	if (wizard.colorFireball === fireballColor) {
-		rank += 0.5;
-	}
-	return rank;
-};
-
-const namesComparator = (left, right) => {
-	if (left > right) {
-		return 1;
-	} else if (left < right) {
-		return -1;
-	} else {
-		return 0;
-	}
-};
-
-const wizardsComparator = function (left, right) {
-	const rankDiff = getRank(right) - getRank(left);
-	return rankDiff === 0 ? namesComparator(left.name, right.name) : rankDiff;
-};
-
-function updateWizards() {
-	renderSimilarList(wizards.slice().sort(wizardsComparator));
-};
 
 function debounce(fn, ms) {
   let timeout;
@@ -302,35 +280,36 @@ function debounce(fn, ms) {
   };
 }
 
-const updateWizardsDebaunce = debounce(updateWizards, 500);
 
+const setFireballClick = (cb) => {
+	fireballWrapper.addEventListener('click', (evt) => {
+		evt.preventDefault();
+		const newColor = getFireballNewColor();
+		fireballWrapper.style.backgroundColor = newColor;
+		fireballColor = newColor;
+		cb();
+	});
+};
 
-fireballWrapper.addEventListener('click', (evt) => {
-	evt.preventDefault();
-	const newColor = getFireballNewColor();
-	fireballWrapper.style.backgroundColor = newColor;
-	fireballColor = newColor;
-	similarList.innerHTML = '';
-	updateWizardsDebaunce();
-});
+const setCoatClick = (cb) => {
+	wizardCoat.addEventListener('click', (evt) => {
+		evt.preventDefault();
+		const newColor = getCoatNewColor();
+		wizardCoat.style.fill = newColor;
+		coatColor = newColor;
+		cb();
+	});
+};
 
-wizardCoat.addEventListener('click', (evt) => {
-	evt.preventDefault();
-	const newColor = getCoatNewColor();
-	wizardCoat.style.fill = newColor;
-	coatColor = newColor;
-	similarList.innerHTML = '';
-	updateWizardsDebaunce();
-});
-
-wizardEyes.addEventListener('click', (evt) => {
-	evt.preventDefault();
-	const newColor = getEyeNewColor();
-	wizardEyes.style.fill = newColor;
-	eyesColor = newColor;
-	similarList.innerHTML = '';
-	updateWizardsDebaunce();
-});
+const setEyesClick = (cb) => {
+	wizardEyes.addEventListener('click', (evt) => {
+		evt.preventDefault();
+		const newColor = getEyeNewColor();
+		wizardEyes.style.fill = newColor;
+		eyesColor = newColor;
+		cb();
+	});
+};
 
 
 // -----------------------------------------------------------------------------
@@ -449,3 +428,17 @@ form.addEventListener('submit', (evt) => {
 	evt.preventDefault();
 	closeUserModal();
 });
+
+sendRequest('GET', getRequestURL)
+.then(data => {
+	renderSimilarList(data);
+
+	const updateWizards = () => {
+		renderSimilarList(data);
+	};
+	const updateWizardsDebaunce = debounce(updateWizards, 500);
+	setFireballClick(updateWizardsDebaunce);
+	setCoatClick(updateWizardsDebaunce);
+	setEyesClick(updateWizardsDebaunce);
+})
+.catch(err => console.error(err))
