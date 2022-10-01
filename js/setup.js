@@ -276,7 +276,7 @@ function debounce(fn, ms) {
   return function() {
     const fnCall = () => { fn.apply(this, arguments) }
 		clearTimeout(timeout);
-    timeout = setTimeout(fnCall, ms);
+    timeout = setTimeout(fn, ms);
   };
 }
 
@@ -386,7 +386,31 @@ userPicSetup.addEventListener('mousedown', (evt) => {
 });
 
 
-// ОБРАБОТЧИКИ ФОРМЫ
+// AVATAR JS
+
+const FILE_TYPES = ['gif', 'jpg', 'jpeg', 'png'];
+
+const fileChoser = document.querySelector('.upload input[type=file]');
+const preview = document.querySelector('.setup-user-pic');
+
+fileChoser.addEventListener('change', (evt) => {
+	const file = evt.target.files[0];
+	const fileName = file.name.toLowerCase();
+
+	const matches = FILE_TYPES.some((element) => {
+		return fileName.endsWith(element);
+	});
+
+	if (matches) {
+		const reader = new FileReader();
+
+		reader.addEventListener('load', () => {
+			preview.src = reader.result;
+		});
+
+		reader.readAsDataURL(file);
+	}
+});
 
 // SERVER
 
